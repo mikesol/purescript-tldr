@@ -15,6 +15,21 @@ import Type.Proxy (Proxy)
 data RCPair :: Type -> Type -> Type
 data RCPair token combinator
 
+class InternalFormat :: Symbol -> Doc -> Doc -> Constraint
+class InternalFormat indent doc doc' | indent doc -> doc'
+
+instance InternalFormat sym (Text t) (Beside (Text sym) (Text t))
+instance InternalFormat sym (Quote q) (Beside (Text sym) (Quote q))
+-- reset because we append
+instance (InternalFormat "" a a', InternalFormat "" b b') => InternalFormat sym (Beside a b) (Beside (Text sym) (Beside a' b'))
+instance (InternalFormat "  " a a', InternalFormat "  " b b') => InternalFormat sym (Above a b) (Above a' b')
+
+class Format :: Type -> Type -> Constraint
+class Format i o | i -> o
+
+instance Format (Success a b) (Success a b)
+instance InternalFormat "" fail newFail => Format (Failure fail) (Failure newFail)
+
 class ModifyState :: Type -> Type -> Type -> Constraint
 class ModifyState constant stateI stateO | constant stateI -> stateO
 
@@ -435,51 +450,51 @@ else instance (LookupToken token rc combinator, ParseRC rc sym combinator stateI
 class Parse :: Symbol -> Type -> Type -> Type -> Type -> Constraint
 class Parse sym combinator stateI res stateO | sym combinator stateI -> res stateO
 
-instance ParseRC L.Nil sym Any stateI res stateI => Parse sym Any stateI res stateI
-else instance ParseRC L.Nil sym MatchAZ stateI res stateI => Parse sym MatchAZ stateI res stateI
-else instance ParseRC L.Nil sym Match09 stateI res stateI => Parse sym Match09 stateI res stateI
-else instance ParseRC L.Nil sym Matchaz stateI res stateI => Parse sym Matchaz stateI res stateI
-else instance ParseRC L.Nil sym MatchAlpha stateI res stateI => Parse sym MatchAlpha stateI res stateI
-else instance ParseRC L.Nil sym MatchAlphanumeric stateI res stateI => Parse sym MatchAlphanumeric stateI res stateI
-else instance ParseRC L.Nil sym MatchAZ09 stateI res stateI => Parse sym MatchAZ09 stateI res stateI
-else instance ParseRC L.Nil sym Matchaz09 stateI res stateI => Parse sym Matchaz09 stateI res stateI
-else instance ParseRC L.Nil sym MatchHex stateI res stateI => Parse sym MatchHex stateI res stateI
-else instance ParseRC L.Nil sym MatchWhitespace stateI res stateI => Parse sym MatchWhitespace stateI res stateI
-else instance ParseRC L.Nil sym (Literal m) stateI res stateI => Parse sym (Literal m) stateI res stateI
-else instance ParseRC L.Nil sym (Some m) stateI res stateI => Parse sym (Some m) stateI res stateI
-else instance ParseRC L.Nil sym (Many m) stateI res stateI => Parse sym (Many m) stateI res stateI
-else instance ParseRC L.Nil sym (Except m n) stateI res stateI => Parse sym (Except m n) stateI res stateI
-else instance ParseRC L.Nil sym (Or m n) stateI res stateI => Parse sym (Or m n) stateI res stateI
-else instance ParseRC L.Nil sym (And m n) stateI res stateI => Parse sym (And m n) stateI res stateI
-else instance ParseRC L.Nil sym (Match2 m) stateI res stateI => Parse sym (Match2 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match3 m) stateI res stateI => Parse sym (Match3 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match4 m) stateI res stateI => Parse sym (Match4 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match5 m) stateI res stateI => Parse sym (Match5 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match6 m) stateI res stateI => Parse sym (Match6 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match7 m) stateI res stateI => Parse sym (Match7 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match8 m) stateI res stateI => Parse sym (Match8 m) stateI res stateI
-else instance ParseRC L.Nil sym (Match9 m) stateI res stateI => Parse sym (Match9 m) stateI res stateI
+instance (ParseRC L.Nil sym Any stateI res' stateI, Format res' res) => Parse sym Any stateI res stateI
+else instance (ParseRC L.Nil sym MatchAZ stateI res' stateI, Format res' res) => Parse sym MatchAZ stateI res stateI
+else instance (ParseRC L.Nil sym Match09 stateI res' stateI, Format res' res) => Parse sym Match09 stateI res stateI
+else instance (ParseRC L.Nil sym Matchaz stateI res' stateI, Format res' res) => Parse sym Matchaz stateI res stateI
+else instance (ParseRC L.Nil sym MatchAlpha stateI res' stateI, Format res' res) => Parse sym MatchAlpha stateI res stateI
+else instance (ParseRC L.Nil sym MatchAlphanumeric stateI res' stateI, Format res' res) => Parse sym MatchAlphanumeric stateI res stateI
+else instance (ParseRC L.Nil sym MatchAZ09 stateI res' stateI, Format res' res) => Parse sym MatchAZ09 stateI res stateI
+else instance (ParseRC L.Nil sym Matchaz09 stateI res' stateI, Format res' res) => Parse sym Matchaz09 stateI res stateI
+else instance (ParseRC L.Nil sym MatchHex stateI res' stateI, Format res' res) => Parse sym MatchHex stateI res stateI
+else instance (ParseRC L.Nil sym MatchWhitespace stateI res' stateI, Format res' res) => Parse sym MatchWhitespace stateI res stateI
+else instance (ParseRC L.Nil sym (Literal m) stateI res' stateI, Format res' res) => Parse sym (Literal m) stateI res stateI
+else instance (ParseRC L.Nil sym (Some m) stateI res' stateI, Format res' res) => Parse sym (Some m) stateI res stateI
+else instance (ParseRC L.Nil sym (Many m) stateI res' stateI, Format res' res) => Parse sym (Many m) stateI res stateI
+else instance (ParseRC L.Nil sym (Except m n) stateI res' stateI, Format res' res) => Parse sym (Except m n) stateI res stateI
+else instance (ParseRC L.Nil sym (Or m n) stateI res' stateI, Format res' res) => Parse sym (Or m n) stateI res stateI
+else instance (ParseRC L.Nil sym (And m n) stateI res' stateI, Format res' res) => Parse sym (And m n) stateI res stateI
+else instance (ParseRC L.Nil sym (Match2 m) stateI res' stateI, Format res' res) => Parse sym (Match2 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match3 m) stateI res' stateI, Format res' res) => Parse sym (Match3 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match4 m) stateI res' stateI, Format res' res) => Parse sym (Match4 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match5 m) stateI res' stateI, Format res' res) => Parse sym (Match5 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match6 m) stateI res' stateI, Format res' res) => Parse sym (Match6 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match7 m) stateI res' stateI, Format res' res) => Parse sym (Match7 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match8 m) stateI res' stateI, Format res' res) => Parse sym (Match8 m) stateI res stateI
+else instance (ParseRC L.Nil sym (Match9 m) stateI res' stateI, Format res' res) => Parse sym (Match9 m) stateI res stateI
 
-else instance ParseRC L.Nil sym (IgnoreAndThenParse ignore parse) stateI res stateO => Parse sym (IgnoreAndThenParse ignore parse) stateI res stateO
-else instance ParseRC L.Nil sym (ParseAndThenIgnore parse ignore) stateI res stateO => Parse sym (ParseAndThenIgnore parse ignore) stateI res stateO
-else instance ParseRC L.Nil sym (C.Or left right) stateI res stateO => Parse sym (C.Or left right) stateI res stateO
+else instance (ParseRC L.Nil sym (IgnoreAndThenParse ignore parse) stateI res' stateO, Format res' res) => Parse sym (IgnoreAndThenParse ignore parse) stateI res stateO
+else instance (ParseRC L.Nil sym (ParseAndThenIgnore parse ignore) stateI res' stateO, Format res' res) => Parse sym (ParseAndThenIgnore parse ignore) stateI res stateO
+else instance (ParseRC L.Nil sym (C.Or left right) stateI res' stateO, Format res' res) => Parse sym (C.Or left right) stateI res stateO
 else instance ParseRC L.Nil sym (Const val) stateI (Success val sym) stateO => Parse sym (Const val) stateI (Success val sym) stateO
-else instance ParseRC L.Nil sym (ModifyStateBeforeOnConstant constant cont) stateI res stateO => Parse sym (ModifyStateBeforeOnConstant constant cont) stateI res stateO
-else instance ParseRC L.Nil sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res stateO => Parse sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res stateO
-else instance ParseRC L.Nil sym (ModifyStateAfterSuccessWithResult f cont) stateI res stateO => Parse sym (ModifyStateAfterSuccessWithResult f cont) stateI res stateO
-else instance ParseRC L.Nil i (C.Many parse) stateI res stateO => Parse i (C.Many parse) stateI res stateO
-else instance ParseRC L.Nil i (C.Some parse) stateI res stateO => Parse i (C.Some parse) stateI res stateO
-else instance ParseRC L.Nil i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res stateO => Parse i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res stateO
-else instance ParseRC L.Nil i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res stateO => Parse i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res stateO
-else instance ParseRC L.Nil i (C.BranchOnState L.Nil otherwise) stateI res stateO => Parse i (C.BranchOnState L.Nil otherwise) stateI res stateO
-else instance ParseRC (L.Cons (RCPair self combinator) L.Nil) i combinator stateI res stateO => Parse i (C.Fix self combinator) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d e g h i j k) stateI res stateO => Parse sym (f a b c d e g h i j k) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d e g h i j) stateI res stateO => Parse sym (f a b c d e g h i j) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d e g h i) stateI res stateO => Parse sym (f a b c d e g h i) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d e g h) stateI res stateO => Parse sym (f a b c d e g h) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d e g) stateI res stateO => Parse sym (f a b c d e g) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d e) stateI res stateO => Parse sym (f a b c d e) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c d) stateI res stateO => Parse sym (f a b c d) stateI res stateO
-else instance ParseRC L.Nil sym (f a b c) stateI res stateO => Parse sym (f a b c) stateI res stateO
-else instance ParseRC L.Nil sym (f a b) stateI res stateO => Parse sym (f a b) stateI res stateO
-else instance ParseRC L.Nil sym (f a) stateI res stateO => Parse sym (f a) stateI res stateO
+else instance (ParseRC L.Nil sym (ModifyStateBeforeOnConstant constant cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateBeforeOnConstant constant cont) stateI res stateO
+else instance (ParseRC L.Nil sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res stateO
+else instance (ParseRC L.Nil sym (ModifyStateAfterSuccessWithResult f cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateAfterSuccessWithResult f cont) stateI res stateO
+else instance (ParseRC L.Nil i (C.Many parse) stateI res' stateO, Format res' res) => Parse i (C.Many parse) stateI res stateO
+else instance (ParseRC L.Nil i (C.Some parse) stateI res' stateO, Format res' res) => Parse i (C.Some parse) stateI res stateO
+else instance (ParseRC L.Nil i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res stateO
+else instance (ParseRC L.Nil i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res stateO
+else instance (ParseRC L.Nil i (C.BranchOnState L.Nil otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState L.Nil otherwise) stateI res stateO
+else instance (ParseRC (L.Cons (RCPair self combinator) L.Nil) i combinator stateI res' stateO, Format res' res) => Parse i (C.Fix self combinator) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d e g h i j k) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i j k) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d e g h i j) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i j) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d e g h i) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d e g h) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d e g) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d e) stateI res' stateO, Format res' res) => Parse sym (f a b c d e) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c d) stateI res' stateO, Format res' res) => Parse sym (f a b c d) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b c) stateI res' stateO, Format res' res) => Parse sym (f a b c) stateI res stateO
+else instance (ParseRC L.Nil sym (f a b) stateI res' stateO, Format res' res) => Parse sym (f a b) stateI res stateO
+else instance (ParseRC L.Nil sym (f a) stateI res' stateO, Format res' res) => Parse sym (f a) stateI res stateO
