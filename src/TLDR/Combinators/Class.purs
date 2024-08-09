@@ -22,7 +22,7 @@ instance InternalFormat sym (Text t) (Beside (Text sym) (Text t))
 instance InternalFormat sym (Quote q) (Beside (Text sym) (Quote q))
 -- reset because we append
 instance (InternalFormat "" a a', InternalFormat "" b b') => InternalFormat sym (Beside a b) (Beside (Text sym) (Beside a' b'))
-instance (InternalFormat "  " a a', InternalFormat "  " b b') => InternalFormat sym (Above a b) (Above a' b')
+instance (InternalFormat " " a a', InternalFormat " " b b') => InternalFormat sym (Above a b) (Above a' b')
 
 class Format :: Type -> Type -> Constraint
 class Format i o | i -> o
