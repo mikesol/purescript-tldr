@@ -5,10 +5,11 @@ import Prelude
 import Prim.TypeError (Text)
 import TLDR.Combinators (IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ModifyStateBeforeOnConstant, ParseAndThenIgnore)
 import TLDR.Combinators as C
-import TLDR.Combinators.Class (class ModifyState, class Parse, class ShowParser, SP2, SP4)
+import TLDR.Combinators.Class (class ModifyState, class Parse, class ShowParser, SP1, SP2, SP4)
 import TLDR.List (Cons, Nil)
 import TLDR.List as L
 import TLDR.Matchers (Literal, Match09, Match3, MatchAZ, MatchWhitespace, Matchaz, Or, Some)
+import TLDR.Matchers as M
 import TLDR.Matchers.Class (class MatchLiteral)
 import TLDR.Result (Failure, Success)
 import Type.Proxy (Proxy)
@@ -165,17 +166,17 @@ testMatchFooBarBazQuxSomeSuccess0 = testMatchFooBarBazQuxSomeSuccess @"F1 bbbAzb
 testMatchFooBarBazQuxSomeSuccess1 = testMatchFooBarBazQuxSomeSuccess @"F1 abcD 12Z" @(FooBarBazQux (FooBar (Proxy "F") (Proxy "1")) (Cons (FooBar (Proxy "abc") (Proxy "D")) Nil) (Proxy "12") (Proxy "Z")) @"" :: Unit
 testMatchFooBarBazQuxSomeFailure0 = testMatchFooBarBazQuxSomeFailure @"F1 bbb 12Z" :: Unit
 testMatchFooBarBazQuxSomeFailure1 = testMatchFooBarBazQuxSomeFailure @"F1 bbbAzbzAAqrs2 12Z" :: Unit
+
 -- these tests below should fail to compile, check periodically
 -- testMatchFooBarBazQuxSomeSuccess0' = testMatchFooBarBazQuxSomeSuccess @"F1 bbbAzbzAAqrs2 12Z" @(FooBarBazQux (FooBar (Proxy "F") (Proxy "1")) (Cons (FooBar (Proxy "bbb") (Proxy "A")) (Cons (FooBar (Proxy "zbz") (Proxy "AA")) (Cons (FooBar (Proxy "qrs") (Proxy "ABCD")) Nil))) (Proxy "12") (Proxy "Z")) @"" :: Unit
 -- testMatchFooBarBazQuxSomeSuccess1' = testMatchFooBarBazQuxSomeSuccess @"F1 bbb 12Z" @(FooBarBazQux (FooBar (Proxy "F") (Proxy "1")) Nil (Proxy "12") (Proxy "Z")) @"" :: Unit
 -- testMatchFooBarBazQuxSomeFailure0' = testMatchFooBarBazQuxSomeFailure @"F1 abcD 12Z" :: Unit
 -- testMatchFooBarBazQuxSomeFailure1' = testMatchFooBarBazQuxSomeFailure @"F1 bbbAzbzAAqrsABCD 12Z" :: Unit
 
-
 testMatchFooBarBazQuxSepBySuccess :: forall @toParse @h @t. Parse toParse (FooBarBazQux (FooBar (MatchAZ) (Match09)) (C.Or (ParseAndThenIgnore (IgnoreAndThenParse (Some MatchWhitespace) (C.SepBy (FooBar (Match3 Matchaz) (Some MatchAZ)) (Literal ","))) (Some MatchWhitespace)) (IgnoreAndThenParse (Some MatchWhitespace) (C.Const Nil))) (Or (Some Match09) (Some Matchaz)) (Literal "Z")) Unit (Success h t) Unit => Unit
 testMatchFooBarBazQuxSepBySuccess = unit
 
-testMatchFooBarBazQuxSepByFailure :: forall @toParse. Parse toParse  (FooBarBazQux (FooBar (MatchAZ) (Match09)) (C.Or (ParseAndThenIgnore (IgnoreAndThenParse (Some MatchWhitespace) (C.SepBy (FooBar (Match3 Matchaz) (Some MatchAZ)) (Literal ","))) (Some MatchWhitespace)) (IgnoreAndThenParse (Some MatchWhitespace) (C.Const Nil))) (Or (Some Match09) (Some Matchaz)) (Literal "Z"))   Unit (Failure _) Unit => Unit
+testMatchFooBarBazQuxSepByFailure :: forall @toParse. Parse toParse (FooBarBazQux (FooBar (MatchAZ) (Match09)) (C.Or (ParseAndThenIgnore (IgnoreAndThenParse (Some MatchWhitespace) (C.SepBy (FooBar (Match3 Matchaz) (Some MatchAZ)) (Literal ","))) (Some MatchWhitespace)) (IgnoreAndThenParse (Some MatchWhitespace) (C.Const Nil))) (Or (Some Match09) (Some Matchaz)) (Literal "Z")) Unit (Failure _) Unit => Unit
 testMatchFooBarBazQuxSepByFailure = unit
 
 testMatchFooBarBazQuxSepBySuccess0 = testMatchFooBarBazQuxSepBySuccess @"F1 bbbA,zbzAA,qrsABCD 12Z" @(FooBarBazQux (FooBar (Proxy "F") (Proxy "1")) (Cons (FooBar (Proxy "bbb") (Proxy "A")) (Cons (FooBar (Proxy "zbz") (Proxy "AA")) (Cons (FooBar (Proxy "qrs") (Proxy "ABCD")) Nil))) (Proxy "12") (Proxy "Z")) @"" :: Unit
@@ -207,6 +208,7 @@ testMatchModifyStateBeforeOnConstantFailure
 testMatchModifyStateBeforeOnConstantFailure = unit
 
 testMatchModifyStateBeforeOnConstantSuccess0 = testMatchModifyStateBeforeOnConstantSuccess @"F1a" @(FooBar (Proxy "F") (Proxy "1")) @"a" :: Unit
+
 -- this will fail to compile, as it should
 -- testMatchModifyStateBeforeOnConstantFailure0 = testMatchModifyStateBeforeOnConstantFailure @"q1a" :: Unit
 
@@ -224,6 +226,7 @@ testMatchModifyStateAfterSuccessOnConstantFailure
 testMatchModifyStateAfterSuccessOnConstantFailure = unit
 
 testMatchModifyStateAfterSuccessOnConstantSuccess0 = testMatchModifyStateAfterSuccessOnConstantSuccess @"F1a" @(FooBar (Proxy "F") (Proxy "1")) @"a" :: Unit
+
 -- this will fail to compile, as it should
 -- testMatchModifyStateAfterSuccessOnConstantFailure0 = testMatchModifyStateAfterSuccessOnConstantFailure @"q1a" :: Unit
 
@@ -234,8 +237,8 @@ data MyFunctor0 a
 
 data MyFunctor1 :: Type -> Type
 data MyFunctor1 a
-instance ModifyState (MyFunctor0 (Proxy a)) MyState0 (MyFunctor1 (Proxy a))
 
+instance ModifyState (MyFunctor0 (Proxy a)) MyState0 (MyFunctor1 (Proxy a))
 
 testMatchModifyStateAfterSuccessWithResultSuccess :: forall @toParse @r @h @t. Parse toParse (FooBar (ModifyStateAfterSuccessWithResult MyFunctor0 (MatchAZ)) (Match09)) MyState0 (Success h t) (MyFunctor1 r) => Unit
 testMatchModifyStateAfterSuccessWithResultSuccess = unit
@@ -245,6 +248,7 @@ testMatchModifyStateAfterSuccessWithResultFailure
 testMatchModifyStateAfterSuccessWithResultFailure = unit
 
 testMatchModifyStateAfterSuccessWithResultSuccess0 = testMatchModifyStateAfterSuccessWithResultSuccess @"F1a" @(Proxy "F") @(FooBar (Proxy "F") (Proxy "1")) @"a" :: Unit
+
 -- this will fail to compile, as it should
 -- testMatchModifyStateAfterSuccessWithResultFailure0 = testMatchModifyStateAfterSuccessWithResultFailure @"F1a" :: Unit
 
@@ -258,3 +262,47 @@ testMatchBranchOnStateFailure = unit
 
 testMatchBranchOnStateSuccess0 = testMatchBranchOnStateSuccess @"Fq" @(FooBar (Proxy "F") (Proxy "q")) @"" :: Unit
 testMatchBranchOnStateFailure0 = testMatchBranchOnStateFailure @"F1" :: Unit
+
+--
+
+type LeftSide a = IgnoreAndThenParse (M.Many MatchWhitespace) (ParseAndThenIgnore a (M.Some MatchWhitespace))
+type RightSide a = IgnoreAndThenParse (M.Some MatchWhitespace) (ParseAndThenIgnore a (M.Many MatchWhitespace))
+type NoSide a = IgnoreAndThenParse (M.Many MatchWhitespace) (ParseAndThenIgnore a (M.Many MatchWhitespace))
+
+data TAnd a b
+
+instance ShowParser (SP2 "TAnd" a b) doc => ShowParser (TAnd a b) doc
+data TOr a b
+
+instance ShowParser (SP2 "TOr" a b) doc => ShowParser (TOr a b) doc
+data TNot a
+
+instance ShowParser (SP1 "TNot" a) doc => ShowParser (TNot a) doc
+
+type ParseAnd c = ParseAndThenIgnore
+  (IgnoreAndThenParse (Literal "(") (TAnd (ParseAndThenIgnore (LeftSide c) (M.And (Literal "A") (M.And (Literal "N") (Literal "D")))) (RightSide c)))
+  (Literal ")")
+
+type ParseOr c = ParseAndThenIgnore
+  (IgnoreAndThenParse (Literal "(") (TOr (ParseAndThenIgnore (LeftSide c) (M.And (Literal "O") (Literal "R"))) (RightSide c)))
+  (Literal ")")
+
+type ParseNot c = ParseAndThenIgnore
+  (IgnoreAndThenParse (Literal "(") (TNot (IgnoreAndThenParse (M.And (Literal "N") (M.And (Literal "O") (Literal "T"))) (NoSide c))))
+  (Literal ")")
+
+type ParseIdent = (M.Some Matchaz)
+
+type ParseCond c = C.Or (ParseAnd c) (C.Or (ParseOr c) (C.Or (ParseNot c) ParseIdent))
+
+data CondFix
+
+instance ShowParser CondFix (Text "CondFix")
+
+testMatchRecursionSuccess :: forall @toParse @h @t. Parse toParse (C.Fix CondFix (ParseCond CondFix)) Unit (Success h t) Unit => Unit
+testMatchRecursionSuccess = unit
+
+testMatchRecursionSuccess0 = testMatchRecursionSuccess @"(foo AND bar)" @(TAnd (Proxy "foo") (Proxy "bar")) @"" :: Unit
+testMatchRecursionSuccess1 = testMatchRecursionSuccess @"(foo OR bar)" @(TOr (Proxy "foo") (Proxy "bar")) @"" :: Unit
+testMatchRecursionSuccess2 = testMatchRecursionSuccess @"((baz OR qux) AND (foo OR bar))" @(TAnd (TOr (Proxy "baz") (Proxy "qux")) (TOr (Proxy "foo") (Proxy "bar"))) @"" :: Unit
+testMatchRecursionSuccess3 = testMatchRecursionSuccess @"((baz OR qux) AND (NOT bar))" @(TAnd (TOr (Proxy "baz") (Proxy "qux")) (TNot (Proxy "bar"))) @"" :: Unit
