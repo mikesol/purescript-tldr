@@ -7,5 +7,4 @@ import Effect.Class.Console (log)
 
 main :: Effect Unit
 main = do
-  log "🍕"
-  log "You should add some tests."
+  log "All the tests are at the typelevel! If you see this, they passed."
