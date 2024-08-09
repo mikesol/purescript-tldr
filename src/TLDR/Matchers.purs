@@ -48,3 +48,7 @@ data Or left right
 
 data And :: Type -> Type -> Type
 data And left right
+
+data Noop
+
+data EOF

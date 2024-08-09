@@ -2,13 +2,31 @@ module TLDR.Combinators.Class where
 
 import TLDR.Matchers
 
+import Prelude (Unit)
 import Prim.TypeError (Above, Beside, Doc, Quote, Text)
-import TLDR.Combinators (Const, IgnoreAndThenParse)
+import TLDR.Combinators (Const, IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ModifyStateBeforeOnConstant, ParseAndThenIgnore)
 import TLDR.Combinators as C
+import TLDR.List (Nil)
+import TLDR.List as L
 import TLDR.Matchers.Class as MatchClass
 import TLDR.Matchers.Show (class ShowMatch)
 import TLDR.Result (Failure, SingleFailure, Success)
 import Type.Proxy (Proxy)
+
+class ModifyState :: Type -> Type -> Type -> Constraint
+class ModifyState constant stateI stateO | constant stateI -> stateO
+
+class DoConstantStateModificationOnSuccess :: Type -> Type -> Type -> Type -> Constraint
+class DoConstantStateModificationOnSuccess constant res stateI stateO | constant res stateI -> stateO
+
+instance DoConstantStateModificationOnSuccess constant (Failure fail) stateI stateI
+instance ModifyState constant stateI stateO => DoConstantStateModificationOnSuccess constant (Success a b) stateI stateO
+
+class DoConstantStateModificationWithResult :: (Type -> Type) -> Type -> Type -> Type -> Constraint
+class DoConstantStateModificationWithResult f res stateI stateO | f res stateI -> stateO
+
+instance DoConstantStateModificationWithResult f (Failure fail) stateI stateI
+instance ModifyState (f a) stateI stateO => DoConstantStateModificationWithResult f (Success a b) stateI stateO
 
 class ShowParser :: forall k. k -> Doc -> Constraint
 class ShowParser k doc | k -> doc
@@ -144,6 +162,18 @@ instance ShowParser (Above a b) (Above a b)
 instance ShowParser (Beside a b) (Beside a b)
 instance ShowParser (Failure fail) fail
 instance ShowParser (Proxy s) (Text s)
+instance ShowParser L.Nil (Text "Nil")
+instance (ShowParser a a', ShowParser b b') => ShowParser (L.Cons a b) (Beside a' b')
+instance (ShowParser ignore ignore', ShowParser match match') => ShowParser (IgnoreAndThenParse ignore match) (Above (Text "IgnoreAndThenParse") (Above ignore' match'))
+instance (ShowParser ignore ignore', ShowParser match match') => ShowParser (ParseAndThenIgnore match ignore) (Above (Text "ParseAndThenIgnore") (Above match' ignore'))
+instance (ShowParser match match') => ShowParser (C.Many match) (Above (Text "Many") match')
+instance (ShowParser match match') => ShowParser (C.Some match) (Above (Text "Some") match')
+instance (ShowParser match match') => ShowParser (C.Const match) (Above (Text "Const") match')
+instance (ShowParser constant constant', ShowParser cont cont') => ShowParser (C.ModifyStateBeforeOnConstant constant cont) (Above (Text "ModifyStateBeforeOnConstant") (Above constant' cont'))
+instance (ShowParser constant constant', ShowParser cont cont') => ShowParser (C.ModifyStateAfterSuccessOnConstant constant cont) (Above (Text "ModifyStateAfterSuccessOnConstant") (Above constant' cont'))
+instance (ShowParser cont cont') => ShowParser (C.ModifyStateAfterSuccessWithResult f cont) (Above (Text "ModifyStateAfterSuccessWithResult") cont')
+instance (ShowParser a a', ShowParser b b') => ShowParser (C.BranchOnState a b) (Above (Text "BranchOnState") (Above a' b'))
+instance (ShowParser i i', ShowParser t t') => ShowParser (C.IfThen i t) (Above (Text "IfThen") (Above i' t'))
 
 class ContinueIfMatch :: Type -> Type -> Type -> Type -> Type -> Constraint
 class ContinueIfMatch res' parse stateI res stateO | res' parse stateI -> res stateO
@@ -151,11 +181,41 @@ class ContinueIfMatch res' parse stateI res stateO | res' parse stateI -> res st
 instance ContinueIfMatch (Failure fail) parse stateI (Failure fail) stateI
 instance (Parse b parse stateI res stateO) => ContinueIfMatch (Success ignore b) parse stateI res stateO
 
-class UseIfMatch :: Symbol -> Type -> Type -> Type -> Type -> Type -> Type  -> Constraint
+class ContinueIfParse :: Type -> Type -> Type -> Type -> Type -> Constraint
+class ContinueIfParse res' match stateI res stateO | res' match stateI -> res stateO
+
+instance ContinueIfParse (Failure fail) match stateI (Failure fail) stateI
+instance (Parse b (IgnoreAndThenParse match (Const yay)) stateI res stateO) => ContinueIfParse (Success yay b) match stateI res stateO
+
+class UseIfMatch :: Symbol -> Type -> Type -> Type -> Type -> Type -> Type -> Constraint
 class UseIfMatch sym res' parse stateI stateI' res stateO | sym res' parse stateI stateI' -> res stateO
 
 instance (Parse sym parse stateI res stateO) => UseIfMatch sym (Failure fail) parse stateI stateI' res stateO
 instance UseIfMatch sym (Success h t) parse stateI stateI' (Success h t) stateI'
+
+class ManyLoop :: Symbol -> Type -> Type -> Type -> Type -> Type -> Constraint
+class ManyLoop i inRes inState parse outRes outState | i inRes inState parse -> outRes outState
+
+instance
+  ( Parse t parse inState res' outState'
+  , ManyLoop t res' outState' parse (Success h' t') outState
+  ) =>
+  ManyLoop i (Success h t) inState parse (Success (L.Cons h h') t') outState
+
+instance ManyLoop i (Failure ignore) inState parse (Success Nil i) inState
+
+class UnUnit :: Type -> Type -> Constraint
+class UnUnit i o | i -> o
+
+instance UnUnit (Success (L.Cons Unit r) t) (Success r t)
+else instance UnUnit a a
+
+class FailOnNil :: Type -> Type -> Constraint
+class FailOnNil i o | i -> o
+
+instance FailOnNil (Success Nil i) (Failure (Text "Expected at least one match"))
+instance FailOnNil (Success (L.Cons a b) c) (Success (L.Cons a b) c)
+instance FailOnNil (Failure fail) (Failure fail)
 
 class ContinueNary :: forall ctor. Type -> Type -> ctor -> Type -> Type -> Type -> Constraint
 class ContinueNary resI stateI ctor args resO stateO | resI stateI ctor args -> resO stateO
@@ -234,6 +294,8 @@ data Args1 a
 -- matchers
 instance ShowMatch Any o => ShowParser Any (Text o)
 instance ShowMatch MatchAZ o => ShowParser MatchAZ (Text o)
+instance ShowMatch Noop o => ShowParser Noop (Text o)
+instance ShowMatch EOF o => ShowParser EOF (Text o)
 instance ShowMatch Match09 o => ShowParser Match09 (Text o)
 instance ShowMatch Matchaz o => ShowParser Matchaz (Text o)
 instance ShowMatch MatchAlpha o => ShowParser MatchAlpha (Text o)
@@ -257,6 +319,8 @@ instance ShowMatch (Match7 m) o => ShowParser (Match7 m) (Text o)
 instance ShowMatch (Match8 m) o => ShowParser (Match8 m) (Text o)
 instance ShowMatch (Match9 m) o => ShowParser (Match9 m) (Text o)
 
+-- don't parse against Noop - it can only be in a matcher
+-- don't parse against EOF - it can only be in a matcher
 instance (MatchClass.Match sym Any res', RecastSuccessToProxy res' res) => Parse sym Any stateI res stateI
 else instance (MatchClass.Match sym MatchAZ res', RecastSuccessToProxy res' res) => Parse sym MatchAZ stateI res stateI
 else instance (MatchClass.Match sym Match09 res', RecastSuccessToProxy res' res) => Parse sym Match09 stateI res stateI
@@ -283,8 +347,47 @@ else instance (MatchClass.Match sym (Match8 m) res', RecastSuccessToProxy res' r
 else instance (MatchClass.Match sym (Match9 m) res', RecastSuccessToProxy res' res) => Parse sym (Match9 m) stateI res stateI
 --------
 else instance (MatchClass.Match sym ignore res', ContinueIfMatch res' parse stateI res stateO) => Parse sym (IgnoreAndThenParse ignore parse) stateI res stateO
-else instance (Parse sym left stateI res' stateO', UseIfMatch sym res' right stateI stateI' res stateO) => Parse sym (C.Or left right) stateI res stateO
+else instance (Parse sym parse stateI res' stateO', ContinueIfParse res' ignore stateO' res stateO) => Parse sym (ParseAndThenIgnore parse ignore) stateI res stateO
+else instance (Parse sym left stateI res' stateO', UseIfMatch sym res' right stateI stateO' res stateO) => Parse sym (C.Or left right) stateI res stateO
 else instance Parse sym (Const val) stateI (Success val sym) stateO
+else instance
+  ( ModifyState constant stateI stateO'
+  , Parse sym cont stateO' res stateO
+  ) =>
+  Parse sym (ModifyStateBeforeOnConstant constant cont) stateI res stateO
+else instance
+  ( Parse sym cont stateI res stateO'
+  , DoConstantStateModificationOnSuccess constant res stateO' stateO
+  ) =>
+  Parse sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res stateO
+else instance
+  ( Parse sym cont stateI res stateO'
+  , DoConstantStateModificationWithResult f res stateO' stateO
+  ) =>
+  Parse sym (ModifyStateAfterSuccessWithResult f cont) stateI res stateO
+else instance
+  ( ManyLoop i (Success Unit i) stateI parse res' stateO
+  , UnUnit res' res
+  ) =>
+  Parse i (C.Many parse) stateI res stateO
+else instance
+  ( ManyLoop i (Success Unit i) stateI parse res' stateO
+  , UnUnit res' res''
+  , FailOnNil res'' res
+  ) =>
+  Parse i (C.Some parse) stateI res stateO
+else instance
+  ( Parse i cont stateI res stateO
+  ) =>
+  Parse i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res stateO
+else instance
+  ( Parse i (C.BranchOnState rest otherwise) stateI res stateO
+  ) =>
+  Parse i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res stateO
+else instance
+  ( Parse i otherwise stateI res stateO
+  ) =>
+  Parse i (C.BranchOnState Nil otherwise) stateI res stateO
 else instance (ParseADT sym f (Args10 a b c d e g h i j k) stateI res stateO) => Parse sym (f a b c d e g h i j k) stateI res stateO
 else instance (ParseADT sym f (Args9 a b c d e g h i j) stateI res stateO) => Parse sym (f a b c d e g h i j) stateI res stateO
 else instance (ParseADT sym f (Args8 a b c d e g h i) stateI res stateO) => Parse sym (f a b c d e g h i) stateI res stateO
