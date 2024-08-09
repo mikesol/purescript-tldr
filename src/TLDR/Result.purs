@@ -2,8 +2,7 @@ module TLDR.Result
   ( SingleFailure
   , Success
   , Failure
-  )
-  where
+  ) where
 
 import Prim.TypeError (Doc)
 

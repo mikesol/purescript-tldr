@@ -18,14 +18,14 @@ import TLDR.Result (Failure, SingleFailure, Success)
 class ReplaceFailureWith :: Type -> Type -> Type -> Constraint
 class ReplaceFailureWith match resI resO | match resI -> resO
 
-instance ShowMatch match o => ReplaceFailureWith match (Failure f) (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o)) ))
+instance ShowMatch match o => ReplaceFailureWith match (Failure f) (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o))))
 instance ReplaceFailureWith match (Success a b) (Success a b)
 
 class MatchLiteral :: Symbol -> Symbol -> Symbol -> Type -> Constraint
 class MatchLiteral l h t res | l h t -> res
 
 instance MatchLiteral l l t (Success l t)
-else instance MatchLiteral l h t (Failure (SingleFailure (Beside (Text "Could not match ") (Beside (Text l) (Beside (Text " against ") (Text h)))) ))
+else instance MatchLiteral l h t (Failure (SingleFailure (Beside (Text "Could not match ") (Beside (Text l) (Beside (Text " against ") (Text h))))))
 
 class Match :: Symbol -> Type -> Type -> Constraint
 class Match i m o | i m -> o
@@ -39,18 +39,18 @@ instance
   SimpleSubResult (Failure f)
     s
     m
-    (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o)) ))
+    (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o))))
 
 class MergeMatch :: Type -> Symbol -> Type -> Type -> Constraint
 class MergeMatch resI head failMatch resO | resI head failMatch -> resO
 
-instance ShowMatch failMatch o => MergeMatch (Failure f) head failMatch (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o)) ))
+instance ShowMatch failMatch o => MergeMatch (Failure f) head failMatch (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o))))
 instance S.Append h head o => MergeMatch (Success head tail) h failMatch (Success o tail)
 
 class ContinueOnSuccessOrFailWith :: Type -> Type -> Type -> Type -> Constraint
 class ContinueOnSuccessOrFailWith match inRes failMatch outRes | match inRes failMatch -> outRes
 
-instance ShowMatch failMatch o => ContinueOnSuccessOrFailWith match (Failure fail) failMatch (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o)) ))
+instance ShowMatch failMatch o => ContinueOnSuccessOrFailWith match (Failure fail) failMatch (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text o))))
 instance (Match tail match res, MergeMatch res head failMatch o) => ContinueOnSuccessOrFailWith match (Success head tail) failMatch o
 
 class StopOnSuccessOrContinue :: Symbol -> Type -> Type -> Type -> Constraint
@@ -63,7 +63,7 @@ class FailOnSuccessOrContinue :: Symbol -> Type -> Type -> Type -> Constraint
 class FailOnSuccessOrContinue s match inRes outRes | match inRes -> outRes
 
 instance Match s match res => FailOnSuccessOrContinue s match (Failure fail) res
-instance FailOnSuccessOrContinue s match (Success a b) (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text s)) ))
+instance FailOnSuccessOrContinue s match (Success a b) (Failure (SingleFailure (Beside (Text "Failed to match on matcher ") (Text s))))
 
 class ManyLoop :: Symbol -> Type -> Type -> Type -> Constraint
 class ManyLoop i inRes match outRes | i inRes match -> outRes
@@ -79,13 +79,13 @@ instance ManyLoop i (Failure ignore) match (Success "" i)
 
 --
 --
-
-instance
+instance Match i Matchers.Noop (Success "" i)
+else instance
   Match "" Matchers.EOF (Success "" "")
 
 else instance
   ShowMatch m s =>
-  Match "" m (Failure (SingleFailure (Beside (Text "Cannot match empty string against a matcher") (Text s)) ))
+  Match "" m (Failure (SingleFailure (Beside (Text "Cannot match empty string against a matcher") (Text s))))
 
 else instance
   ( S.Cons h t i
@@ -239,5 +239,3 @@ else instance
   , ReplaceFailureWith (Matchers.Some match) res' res
   ) =>
   Match i (Matchers.Some match) res
-
-else instance Match i Matchers.Noop (Success "" i)

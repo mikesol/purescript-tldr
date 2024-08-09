@@ -40,6 +40,7 @@ data Const tp
 
 data Fix :: Type -> Type -> Type
 data Fix self combinator
+
 type SepBy1 a sep = Cons a (Many (IgnoreAndThenParse sep a))
 type SepBy a sep = Or (SepBy1 a sep) (Const Nil)
 type SepEndBy1 a sep = (ParseAndThenIgnore (SepBy1 a sep) (Or sep Noop))

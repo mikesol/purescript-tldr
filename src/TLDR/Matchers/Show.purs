@@ -1,8 +1,7 @@
 module TLDR.Matchers.Show where
 
-
 import Prim.Symbol as S
-import TLDR.Matchers 
+import TLDR.Matchers
 
 class ShowMatch :: Type -> Symbol -> Constraint
 class ShowMatch m s | m -> s
@@ -31,4 +30,4 @@ instance showMatchExcept :: (ShowMatch m s, ShowMatch n t, S.Append "Except " s 
 instance showMatchOr :: (ShowMatch m s, ShowMatch n t, S.Append "Or " s o', S.Append o' t o) => ShowMatch (Or m n) o
 instance showMatchAnd :: (ShowMatch m s, ShowMatch n t, S.Append "And " s o', S.Append o' t o) => ShowMatch (And m n) o
 instance showMatchLiteral :: (S.Append "Literal " l o) => ShowMatch (Literal l) o
-instance showMatchNoop ::  ShowMatch Noop "Noop"
+instance showMatchNoop :: ShowMatch Noop "Noop"
