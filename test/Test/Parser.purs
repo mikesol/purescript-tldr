@@ -306,3 +306,4 @@ testMatchRecursionSuccess0 = testMatchRecursionSuccess @"(foo AND bar)" @(TAnd (
 testMatchRecursionSuccess1 = testMatchRecursionSuccess @"(foo OR bar)" @(TOr (Proxy "foo") (Proxy "bar")) @"" :: Unit
 testMatchRecursionSuccess2 = testMatchRecursionSuccess @"((baz OR qux) AND (foo OR bar))" @(TAnd (TOr (Proxy "baz") (Proxy "qux")) (TOr (Proxy "foo") (Proxy "bar"))) @"" :: Unit
 testMatchRecursionSuccess3 = testMatchRecursionSuccess @"((baz OR qux) AND (NOT bar))" @(TAnd (TOr (Proxy "baz") (Proxy "qux")) (TNot (Proxy "bar"))) @"" :: Unit
+testMatchRecursionSuccess4 = testMatchRecursionSuccess @"((baz OR qux) AND (NOT (bar OR baz)))" @(TAnd (TOr (Proxy "baz") (Proxy "qux")) (TNot (TOr (Proxy "bar") (Proxy "baz")))) @"" :: Unit
