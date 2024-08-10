@@ -50,9 +50,9 @@ import Prelude
 import Prim.TypeError (Text)
 import TLDR.Combinators (ParseAndThenIgnore)
 import TLDR.Combinators as C
-import TLDR.Combinators.Class (class FailOnFail, class Parse, class ShowParser, SP1, SP2, SP4)
+import TLDR.Combinators.Class (class FailOnFail, class Parse, class ShowParser, SP1, SP2)
 import TLDR.Matchers as M
-import TLDR.Sugar (Bracket, DQ, L4, L5, WS, WSM, DQM)
+import TLDR.Sugar (Bracket, DQ, L4, L5, WS, WSM)
 import Type.Function (type ($))
 import Type.Proxy (Proxy(..))
 
@@ -111,11 +111,13 @@ type ParseObject a = WS
       (M.Literal "}")
 
 type MySON = WS
-  $ C.Fix MySONFix
-  $ C.Or ParseInt
-  $ C.Or ParseString
-  $ C.Or ParseBoolean
-  $ C.Or (ParseArray MySONFix) (ParseObject MySONFix)
+  $ C.Fix
+      ( "mySONFix" ::
+          C.Or ParseInt
+            $ C.Or ParseString
+            $ C.Or ParseBoolean
+            $ C.Or (ParseArray (Proxy "mySONFix")) (ParseObject (Proxy "mySONFix"))
+      )
 
 myson0' :: forall a. Parse "1" MySON Unit a Unit => Unit -> Proxy a
 myson0' _ = Proxy
@@ -282,15 +284,15 @@ Here are the combinators. `Fix` is a mind-melt, so there'll be a whole section o
 | `SepEndBy1 a sep` | Parse phrases delimited and optionally terminated by a separator, requiring at least one match. |
 | `EndBy a sep` | Parse phrases delimited and terminated by a separator. |
 | `EndBy1 a sep` | Parse phrases delimited and terminated by a separator, requiring at least one match. |
-| `Fix self a` | A fixed point. See below. |
+| `Fix selfs` | A fixed point. See below. |
 
 #### Fix
 
 Fixed points are essential in parsing because they allow you to parse arbitrarily nested structures. The MySON example above uses one, and most parsing tasks eventually requires a fixed point.
 
-The way `Fix self a` works is that you define a type for `self`. In the MySON example, it's `MySONFix`. Then, in `a`, you refer to `MySONFix` whenever you want to parse `a`. This is how objects and arrays are expressed in the `MySON` example.
+The way `Fix selfs` works is that you define a row of types for `selfs`. In the MySON example, it's a row with entry `mySONFix`. Then, in `a`, you refer to `Proxy "mySONFix"` whenever you want to parse `a`. This is how objects and arrays are expressed in the `MySON` example.
 
-> Mutual recursion is currently not implemented, but it'd be pretty sweet if it were. PRs are welcome!
+To achieve mutual recursion, you can add more keys to the row. In this case, the combinator with the key that comes first in the alphabet is used for parsing.
 
 #### State management
 

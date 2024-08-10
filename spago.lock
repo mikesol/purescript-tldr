@@ -2,9 +2,9 @@ workspace:
   packages:
     tldr:
       path: ./
-      dependencies: []
-      test_dependencies:
+      dependencies:
         - prelude
+      test_dependencies:
         - typelevel-prelude
       build_plan:
         - prelude

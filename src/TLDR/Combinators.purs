@@ -35,8 +35,8 @@ data Many combinator
 data Const :: Type -> Type
 data Const tp
 
-data Fix :: Type -> Type -> Type
-data Fix self combinator
+data Fix :: Row Type -> Type
+data Fix selfs
 
 type SepBy1 a sep = Cons a (Many (IgnoreAndThenParse sep a))
 type SepBy a sep = Or (SepBy1 a sep) (Const Nil)

@@ -277,11 +277,7 @@ type ParseIdent = (M.Some Matchaz)
 
 type ParseCond c = C.Or (ParseAnd c) (C.Or (ParseOr c) (C.Or (ParseNot c) ParseIdent))
 
-data CondFix
-
-instance ShowParser CondFix (Text "CondFix")
-
-testMatchRecursionSuccess :: forall @toParse @h @t. Parse toParse (C.Fix CondFix (ParseCond CondFix)) Unit (Success h t) Unit => Unit
+testMatchRecursionSuccess :: forall @toParse @h @t. Parse toParse (C.Fix (condFix :: ParseCond (Proxy "condFix"))) Unit (Success h t) Unit => Unit
 testMatchRecursionSuccess = unit
 
 testMatchRecursionSuccess0 = testMatchRecursionSuccess @"(foo AND bar)" @(TAnd (Proxy "foo") (Proxy "bar")) @"" :: Unit

@@ -2,6 +2,8 @@ module TLDR.Combinators.Class where
 
 import TLDR.Matchers
 
+import Prim.Row as Row
+import Prim.RowList as RowList
 import Prim.Symbol as S
 import Prim.TypeError (class Fail, Above, Beside, Doc, Quote, Text)
 import TLDR.Combinators (Const, IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ParseAndThenIgnore)
@@ -193,25 +195,30 @@ instance (ShowParser cont cont') => ShowParser (C.ModifyStateAfterSuccessWithRes
 instance (ShowParser a a', ShowParser b b') => ShowParser (C.BranchOnState a b) (Above (Text "BranchOnState") (Above a' b'))
 instance (ShowParser i i', ShowParser t t') => ShowParser (C.IfThen i t) (Above (Text "IfThen") (Above i' t'))
 
-class ContinueIfMatch :: Type -> Type -> Type -> Type -> Type -> Type -> Constraint
+class ContinueIfMatch :: Row Type -> Type -> Type -> Type -> Type -> Type -> Constraint
 class ContinueIfMatch rc res' parse stateI res stateO | rc res' parse stateI -> res stateO
 
 instance ContinueIfMatch rc (Failure fail) parse stateI (Failure fail) stateI
 instance (ParseRC rc b parse stateI res stateO) => ContinueIfMatch rc (Success ignore b) parse stateI res stateO
 
-class ContinueIfParse :: Type -> Type -> Type -> Type -> Type -> Type -> Constraint
+class GetDefault :: RowList.RowList Type -> Type -> Constraint
+class GetDefault i o | i -> o
+
+instance GetDefault (RowList.Cons k v rest) v
+
+class ContinueIfParse :: Row Type -> Type -> Type -> Type -> Type -> Type -> Constraint
 class ContinueIfParse rc res' match stateI res stateO | rc res' match stateI -> res stateO
 
 instance ContinueIfParse rc (Failure fail) match stateI (Failure fail) stateI
 instance (ParseRC rc b (IgnoreAndThenParse match (Const yay)) stateI res stateO) => ContinueIfParse rc (Success yay b) match stateI res stateO
 
-class UseIfMatch :: Type -> Symbol -> Type -> Type -> Type -> Type -> Type -> Type -> Constraint
+class UseIfMatch :: Row Type -> Symbol -> Type -> Type -> Type -> Type -> Type -> Type -> Constraint
 class UseIfMatch rc sym res' parse stateI stateI' res stateO | rc sym res' parse stateI stateI' -> res stateO
 
 instance (ParseRC rc sym parse stateI res stateO) => UseIfMatch rc sym (Failure fail) parse stateI stateI' res stateO
 instance UseIfMatch rc sym (Success h t) parse stateI stateI' (Success h t) stateI'
 
-class ManyLoop :: Type -> Symbol -> Type -> Type -> Type -> Type -> Type -> Constraint
+class ManyLoop :: Row Type -> Symbol -> Type -> Type -> Type -> Type -> Type -> Constraint
 class ManyLoop rc i inRes inState parse outRes outState | rc i inRes inState parse -> outRes outState
 
 instance
@@ -221,20 +228,6 @@ instance
   ManyLoop rc i (Success h t) inState parse (Success (L.Cons h h') t') outState
 
 instance ManyLoop rc i (Failure ignore) inState parse (Success L.Nil i) inState
-
-class ConstructRC :: Type -> Type -> Type -> Type -> Type -> Constraint
-class ConstructRC self combinator iter rc newRC | self iter rc -> newRC
-
-instance ConstructRC self combinator L.Nil rc (L.Cons (RCPair self combinator) rc)
-instance Fail (Above (Text "Recursive context already claimed") (Quote self)) => ConstructRC self combinator (L.Cons (RCPair self combinator) b) x y
-else instance ConstructRC self combinator b x y => ConstructRC self combinator (L.Cons (RCPair notSelf combinator) b) x y
-
-class LookupToken :: Type -> Type -> Type -> Constraint
-class LookupToken needle haystack combinator | needle haystack -> combinator
-
-instance Fail (Above (Text "Could not find recursive token ") (Quote token)) => LookupToken needle L.Nil o
-instance LookupToken token (L.Cons (RCPair token combinator) rest) combinator
-else instance LookupToken token rest combinator => LookupToken token (L.Cons (RCPair notToken notCombinator) rest) combinator
 
 class UnUnit :: Type -> Type -> Constraint
 class UnUnit i o | i -> o
@@ -249,7 +242,7 @@ instance FailOnNil (Success L.Nil i) (Failure (Text "Expected at least one match
 instance FailOnNil (Success (L.Cons a b) c) (Success (L.Cons a b) c)
 instance FailOnNil (Failure fail) (Failure fail)
 
-class ContinueNary :: forall ctor. Type -> Type -> Type -> ctor -> Type -> Type -> Type -> Constraint
+class ContinueNary :: forall ctor. Row Type -> Type -> Type -> ctor -> Type -> Type -> Type -> Constraint
 class ContinueNary rc resI stateI ctor args resO stateO | rc resI stateI ctor args -> resO stateO
 
 instance ShowParser (ctor (Failure fail) b c d e g h i j k) doc => ContinueNary rc (Failure fail) stateI ctor (Args9 b c d e g h i j k) (Failure (SingleFailure doc)) stateI
@@ -287,10 +280,10 @@ class Sequence2 f res o | f res -> o
 instance Sequence2 f (Success a b) (Success (f a) b)
 instance ShowParser (f (Failure fail)) o => Sequence2 f (Failure fail) (Failure (SingleFailure o))
 
-class ParseRC :: Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
+class ParseRC :: Row Type -> Symbol -> Type -> Type -> Type -> Type -> Constraint
 class ParseRC rc sym combinator stateI res stateO | rc sym combinator stateI -> res stateO
 
-class ParseADT :: forall ctor. Type -> Symbol -> ctor -> Type -> Type -> Type -> Type -> Constraint
+class ParseADT :: forall ctor. Row Type -> Symbol -> ctor -> Type -> Type -> Type -> Type -> Constraint
 class ParseADT rc sym ctor args stateI res stateO | rc sym ctor args stateI -> res stateO
 
 data Args10 :: Type -> Type -> Type -> Type -> Type -> Type -> Type -> Type -> Type -> Type -> Type
@@ -396,6 +389,7 @@ else instance (MatchClass.Match sym ignore res', ContinueIfMatch rc res' parse s
 else instance (ParseRC rc sym parse stateI res' stateO', ContinueIfParse rc res' ignore stateO' res stateO) => ParseRC rc sym (ParseAndThenIgnore parse ignore) stateI res stateO
 else instance (ParseRC rc sym left stateI res' stateO', UseIfMatch rc sym res' right stateI stateO' res stateO) => ParseRC rc sym (C.Or left right) stateI res stateO
 else instance ParseRC rc sym (Const val) stateI (Success val sym) stateO
+else instance (Row.Cons token combinator rc' rc, ParseRC rc sym combinator stateI res stateO) => ParseRC rc sym (Proxy token) stateI res stateO
 else instance
   ( ParseRC rc sym cont stateI res stateO'
   , DoConstantStateModificationOnSuccess constant res stateO' stateO
@@ -429,7 +423,7 @@ else instance
   ( ParseRC rc i otherwise stateI res stateO
   ) =>
   ParseRC rc i (C.BranchOnState L.Nil otherwise) stateI res stateO
-else instance (ConstructRC self combinator rc rc newRC, ParseRC newRC i combinator stateI res stateO) => ParseRC rc i (C.Fix self combinator) stateI res stateO
+else instance (Row.Union selfs rc newRC, RowList.RowToList selfs rcl, GetDefault rcl combinator, ParseRC newRC i combinator stateI res stateO) => ParseRC rc i (C.Fix selfs) stateI res stateO
 else instance (ParseADT rc sym f (Args10 a b c d e g h i j k) stateI res stateO) => ParseRC rc sym (f a b c d e g h i j k) stateI res stateO
 else instance (ParseADT rc sym f (Args9 a b c d e g h i j) stateI res stateO) => ParseRC rc sym (f a b c d e g h i j) stateI res stateO
 else instance (ParseADT rc sym f (Args8 a b c d e g h i) stateI res stateO) => ParseRC rc sym (f a b c d e g h i) stateI res stateO
@@ -440,59 +434,58 @@ else instance (ParseADT rc sym f (Args4 a b c d) stateI res stateO) => ParseRC r
 else instance (ParseADT rc sym f (Args3 a b c) stateI res stateO) => ParseRC rc sym (f a b c) stateI res stateO
 else instance (ParseADT rc sym f (Args2 a b) stateI res stateO) => ParseRC rc sym (f a b) stateI res stateO
 else instance (ParseADT rc sym f (Args1 a) stateI res stateO) => ParseRC rc sym (f a) stateI res stateO
-else instance (LookupToken token rc combinator, ParseRC rc sym combinator stateI res stateO) => ParseRC rc sym token stateI res stateO
 
 -- user-facing parsing
 class Parse :: Symbol -> Type -> Type -> Type -> Type -> Constraint
 class Parse sym combinator stateI res stateO | sym combinator stateI -> res stateO
 
-instance (ParseRC L.Nil sym Any stateI res' stateI, Format res' res) => Parse sym Any stateI res stateI
-else instance (ParseRC L.Nil sym MatchAZ stateI res' stateI, Format res' res) => Parse sym MatchAZ stateI res stateI
-else instance (ParseRC L.Nil sym Match09 stateI res' stateI, Format res' res) => Parse sym Match09 stateI res stateI
-else instance (ParseRC L.Nil sym Matchaz stateI res' stateI, Format res' res) => Parse sym Matchaz stateI res stateI
-else instance (ParseRC L.Nil sym MatchAlpha stateI res' stateI, Format res' res) => Parse sym MatchAlpha stateI res stateI
-else instance (ParseRC L.Nil sym MatchAlphanumeric stateI res' stateI, Format res' res) => Parse sym MatchAlphanumeric stateI res stateI
-else instance (ParseRC L.Nil sym MatchAZ09 stateI res' stateI, Format res' res) => Parse sym MatchAZ09 stateI res stateI
-else instance (ParseRC L.Nil sym Matchaz09 stateI res' stateI, Format res' res) => Parse sym Matchaz09 stateI res stateI
-else instance (ParseRC L.Nil sym MatchHex stateI res' stateI, Format res' res) => Parse sym MatchHex stateI res stateI
-else instance (ParseRC L.Nil sym MatchWhitespace stateI res' stateI, Format res' res) => Parse sym MatchWhitespace stateI res stateI
-else instance (ParseRC L.Nil sym (Literal m) stateI res' stateI, Format res' res) => Parse sym (Literal m) stateI res stateI
-else instance (ParseRC L.Nil sym (Some m) stateI res' stateI, Format res' res) => Parse sym (Some m) stateI res stateI
-else instance (ParseRC L.Nil sym (Many m) stateI res' stateI, Format res' res) => Parse sym (Many m) stateI res stateI
-else instance (ParseRC L.Nil sym (Except m n) stateI res' stateI, Format res' res) => Parse sym (Except m n) stateI res stateI
-else instance (ParseRC L.Nil sym (Or m n) stateI res' stateI, Format res' res) => Parse sym (Or m n) stateI res stateI
-else instance (ParseRC L.Nil sym (And m n) stateI res' stateI, Format res' res) => Parse sym (And m n) stateI res stateI
-else instance (ParseRC L.Nil sym (Match2 m) stateI res' stateI, Format res' res) => Parse sym (Match2 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match3 m) stateI res' stateI, Format res' res) => Parse sym (Match3 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match4 m) stateI res' stateI, Format res' res) => Parse sym (Match4 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match5 m) stateI res' stateI, Format res' res) => Parse sym (Match5 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match6 m) stateI res' stateI, Format res' res) => Parse sym (Match6 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match7 m) stateI res' stateI, Format res' res) => Parse sym (Match7 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match8 m) stateI res' stateI, Format res' res) => Parse sym (Match8 m) stateI res stateI
-else instance (ParseRC L.Nil sym (Match9 m) stateI res' stateI, Format res' res) => Parse sym (Match9 m) stateI res stateI
+instance (ParseRC () sym Any stateI res' stateI, Format res' res) => Parse sym Any stateI res stateI
+else instance (ParseRC () sym MatchAZ stateI res' stateI, Format res' res) => Parse sym MatchAZ stateI res stateI
+else instance (ParseRC () sym Match09 stateI res' stateI, Format res' res) => Parse sym Match09 stateI res stateI
+else instance (ParseRC () sym Matchaz stateI res' stateI, Format res' res) => Parse sym Matchaz stateI res stateI
+else instance (ParseRC () sym MatchAlpha stateI res' stateI, Format res' res) => Parse sym MatchAlpha stateI res stateI
+else instance (ParseRC () sym MatchAlphanumeric stateI res' stateI, Format res' res) => Parse sym MatchAlphanumeric stateI res stateI
+else instance (ParseRC () sym MatchAZ09 stateI res' stateI, Format res' res) => Parse sym MatchAZ09 stateI res stateI
+else instance (ParseRC () sym Matchaz09 stateI res' stateI, Format res' res) => Parse sym Matchaz09 stateI res stateI
+else instance (ParseRC () sym MatchHex stateI res' stateI, Format res' res) => Parse sym MatchHex stateI res stateI
+else instance (ParseRC () sym MatchWhitespace stateI res' stateI, Format res' res) => Parse sym MatchWhitespace stateI res stateI
+else instance (ParseRC () sym (Literal m) stateI res' stateI, Format res' res) => Parse sym (Literal m) stateI res stateI
+else instance (ParseRC () sym (Some m) stateI res' stateI, Format res' res) => Parse sym (Some m) stateI res stateI
+else instance (ParseRC () sym (Many m) stateI res' stateI, Format res' res) => Parse sym (Many m) stateI res stateI
+else instance (ParseRC () sym (Except m n) stateI res' stateI, Format res' res) => Parse sym (Except m n) stateI res stateI
+else instance (ParseRC () sym (Or m n) stateI res' stateI, Format res' res) => Parse sym (Or m n) stateI res stateI
+else instance (ParseRC () sym (And m n) stateI res' stateI, Format res' res) => Parse sym (And m n) stateI res stateI
+else instance (ParseRC () sym (Match2 m) stateI res' stateI, Format res' res) => Parse sym (Match2 m) stateI res stateI
+else instance (ParseRC () sym (Match3 m) stateI res' stateI, Format res' res) => Parse sym (Match3 m) stateI res stateI
+else instance (ParseRC () sym (Match4 m) stateI res' stateI, Format res' res) => Parse sym (Match4 m) stateI res stateI
+else instance (ParseRC () sym (Match5 m) stateI res' stateI, Format res' res) => Parse sym (Match5 m) stateI res stateI
+else instance (ParseRC () sym (Match6 m) stateI res' stateI, Format res' res) => Parse sym (Match6 m) stateI res stateI
+else instance (ParseRC () sym (Match7 m) stateI res' stateI, Format res' res) => Parse sym (Match7 m) stateI res stateI
+else instance (ParseRC () sym (Match8 m) stateI res' stateI, Format res' res) => Parse sym (Match8 m) stateI res stateI
+else instance (ParseRC () sym (Match9 m) stateI res' stateI, Format res' res) => Parse sym (Match9 m) stateI res stateI
 
-else instance (ParseRC L.Nil sym (IgnoreAndThenParse ignore parse) stateI res' stateO, Format res' res) => Parse sym (IgnoreAndThenParse ignore parse) stateI res stateO
-else instance (ParseRC L.Nil sym (ParseAndThenIgnore parse ignore) stateI res' stateO, Format res' res) => Parse sym (ParseAndThenIgnore parse ignore) stateI res stateO
-else instance (ParseRC L.Nil sym (C.Or left right) stateI res' stateO, Format res' res) => Parse sym (C.Or left right) stateI res stateO
-else instance ParseRC L.Nil sym (Const val) stateI (Success val sym) stateO => Parse sym (Const val) stateI (Success val sym) stateO
-else instance (ParseRC L.Nil sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res stateO
-else instance (ParseRC L.Nil sym (ModifyStateAfterSuccessWithResult f cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateAfterSuccessWithResult f cont) stateI res stateO
-else instance (ParseRC L.Nil i (C.Many parse) stateI res' stateO, Format res' res) => Parse i (C.Many parse) stateI res stateO
-else instance (ParseRC L.Nil i (C.Some parse) stateI res' stateO, Format res' res) => Parse i (C.Some parse) stateI res stateO
-else instance (ParseRC L.Nil i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res stateO
-else instance (ParseRC L.Nil i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res stateO
-else instance (ParseRC L.Nil i (C.BranchOnState L.Nil otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState L.Nil otherwise) stateI res stateO
-else instance (ParseRC (L.Cons (RCPair self combinator) L.Nil) i combinator stateI res' stateO, Format res' res) => Parse i (C.Fix self combinator) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d e g h i j k) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i j k) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d e g h i j) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i j) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d e g h i) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d e g h) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d e g) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d e) stateI res' stateO, Format res' res) => Parse sym (f a b c d e) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c d) stateI res' stateO, Format res' res) => Parse sym (f a b c d) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b c) stateI res' stateO, Format res' res) => Parse sym (f a b c) stateI res stateO
-else instance (ParseRC L.Nil sym (f a b) stateI res' stateO, Format res' res) => Parse sym (f a b) stateI res stateO
-else instance (ParseRC L.Nil sym (f a) stateI res' stateO, Format res' res) => Parse sym (f a) stateI res stateO
+else instance (ParseRC () sym (IgnoreAndThenParse ignore parse) stateI res' stateO, Format res' res) => Parse sym (IgnoreAndThenParse ignore parse) stateI res stateO
+else instance (ParseRC () sym (ParseAndThenIgnore parse ignore) stateI res' stateO, Format res' res) => Parse sym (ParseAndThenIgnore parse ignore) stateI res stateO
+else instance (ParseRC () sym (C.Or left right) stateI res' stateO, Format res' res) => Parse sym (C.Or left right) stateI res stateO
+else instance ParseRC () sym (Const val) stateI (Success val sym) stateO => Parse sym (Const val) stateI (Success val sym) stateO
+else instance (ParseRC () sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateAfterSuccessOnConstant constant cont) stateI res stateO
+else instance (ParseRC () sym (ModifyStateAfterSuccessWithResult f cont) stateI res' stateO, Format res' res) => Parse sym (ModifyStateAfterSuccessWithResult f cont) stateI res stateO
+else instance (ParseRC () i (C.Many parse) stateI res' stateO, Format res' res) => Parse i (C.Many parse) stateI res stateO
+else instance (ParseRC () i (C.Some parse) stateI res' stateO, Format res' res) => Parse i (C.Some parse) stateI res stateO
+else instance (ParseRC () i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState (L.Cons (C.IfThen stateI cont) rest) otherwise) stateI res stateO
+else instance (ParseRC () i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState (L.Cons (C.IfThen stateX cont) rest) otherwise) stateI res stateO
+else instance (ParseRC () i (C.BranchOnState L.Nil otherwise) stateI res' stateO, Format res' res) => Parse i (C.BranchOnState L.Nil otherwise) stateI res stateO
+else instance (RowList.RowToList selfs rcl, GetDefault rcl combinator, ParseRC selfs i combinator stateI res' stateO, Format res' res) => Parse i (C.Fix selfs) stateI res stateO
+else instance (ParseRC () sym (f a b c d e g h i j k) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i j k) stateI res stateO
+else instance (ParseRC () sym (f a b c d e g h i j) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i j) stateI res stateO
+else instance (ParseRC () sym (f a b c d e g h i) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h i) stateI res stateO
+else instance (ParseRC () sym (f a b c d e g h) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g h) stateI res stateO
+else instance (ParseRC () sym (f a b c d e g) stateI res' stateO, Format res' res) => Parse sym (f a b c d e g) stateI res stateO
+else instance (ParseRC () sym (f a b c d e) stateI res' stateO, Format res' res) => Parse sym (f a b c d e) stateI res stateO
+else instance (ParseRC () sym (f a b c d) stateI res' stateO, Format res' res) => Parse sym (f a b c d) stateI res stateO
+else instance (ParseRC () sym (f a b c) stateI res' stateO, Format res' res) => Parse sym (f a b c) stateI res stateO
+else instance (ParseRC () sym (f a b) stateI res' stateO, Format res' res) => Parse sym (f a b) stateI res stateO
+else instance (ParseRC () sym (f a) stateI res' stateO, Format res' res) => Parse sym (f a) stateI res stateO
 
 class FailOnFail :: Type -> Constraint
 class FailOnFail res

@@ -5,9 +5,9 @@ import Prelude
 import Prim.TypeError (Text)
 import TLDR.Combinators (ParseAndThenIgnore)
 import TLDR.Combinators as C
-import TLDR.Combinators.Class (class FailOnFail, class Parse, class ShowParser, SP1, SP2, SP4)
+import TLDR.Combinators.Class (class FailOnFail, class Parse, class ShowParser, SP1, SP2)
 import TLDR.Matchers as M
-import TLDR.Sugar (Bracket, DQ, L4, L5, WS, WSM, DQM)
+import TLDR.Sugar (Bracket, DQ, L4, L5, WS, WSM)
 import Type.Function (type ($))
 import Type.Proxy (Proxy(..))
 
@@ -66,11 +66,13 @@ type ParseObject a = WS
       (M.Literal "}")
 
 type MySON = WS
-  $ C.Fix MySONFix
-  $ C.Or ParseInt
-  $ C.Or ParseString
-  $ C.Or ParseBoolean
-  $ C.Or (ParseArray MySONFix) (ParseObject MySONFix)
+  $ C.Fix
+      ( "mySONFix" ::
+          C.Or ParseInt
+            $ C.Or ParseString
+            $ C.Or ParseBoolean
+            $ C.Or (ParseArray (Proxy "mySONFix")) (ParseObject (Proxy "mySONFix"))
+      )
 
 myson0' :: forall a. Parse "1" MySON Unit a Unit => Unit -> Proxy a
 myson0' _ = Proxy
