@@ -12,7 +12,7 @@ This library aims to bridge that gap, providing the copy-and-paste-ability of LL
 
 ## How it works
 
-Let's write a parser for a subset of JSON, called MySON. It's like JSON, but has no floats and strings can only be alphanumeric.
+Let's examine how `purescript-tldr` works by creating a parser for a subset of JSON, called MySON. It's like JSON, but has no floats and strings can only be alphanumeric.
 
 ### Data types
 
