@@ -194,6 +194,7 @@ instance (ShowParser constant constant', ShowParser cont cont') => ShowParser (C
 instance (ShowParser cont cont') => ShowParser (C.ModifyStateAfterSuccessWithResult f cont) (Above (Text "ModifyStateAfterSuccessWithResult") cont')
 instance (ShowParser a a', ShowParser b b') => ShowParser (C.BranchOnState a b) (Above (Text "BranchOnState") (Above a' b'))
 instance (ShowParser i i', ShowParser t t') => ShowParser (C.IfThen i t) (Above (Text "IfThen") (Above i' t'))
+instance (ShowParser i i', ShowParser t t') => ShowParser (C.Or i t) (Above (Text "Or") (Above i' t'))
 
 class ContinueIfMatch :: Row Type -> Type -> Type -> Type -> Type -> Type -> Constraint
 class ContinueIfMatch rc res' parse stateI res stateO | rc res' parse stateI -> res stateO

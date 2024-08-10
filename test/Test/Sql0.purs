@@ -1,4 +1,4 @@
-module Test.Sql where
+module Test.Sql0 where
 
 import Prelude
 
