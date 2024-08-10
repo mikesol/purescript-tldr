@@ -26,7 +26,7 @@ instance ShowParser (SP1 "MyInt" a) doc => ShowParser (MyInt a) doc
 
 ### ShowParser
 
-In the `MyInt`, we saw that `ShowParser` is used to document our parser. This must be done for every data type to which you parse, otherwise parsing will fail. That's because this library is intended to provide the most helpful parsing errors possible, and that can't be done without rich error messages for any `data` it parses.
+In the `MyInt`, we saw that `ShowParser` is used to document our parser. This must be done for _every_ data type to which you parse, otherwise parsing will fail. This library is intended to provide the most helpful parsing errors possible, and that can't be done without rich error messages for any `data` it parses.
 
 A convenient way to do this is to use `SP1`, `SP2` ... based on the arity of the type, which will generate a sensible automatic representation.
 
