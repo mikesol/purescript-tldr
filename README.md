@@ -2,6 +2,16 @@
 
 A parser of type-level domain representations.
 
+## Why?
+
+As LLMs get better at writing in DSLs, from HTML to SQL to GraphQL, they've become a fast and relatively error-free way to develop software.
+
+Traditional ORMs, on the other hand, act as a typing layer between a DSL and an application.
+
+This library aims to bridge that gap, providing the copy-and-paste-ability of LLM-generated DSL code with the type-safety of an ORM.
+
+## How it works
+
 Let's say you do
 
 ```purescript

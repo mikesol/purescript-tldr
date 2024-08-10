@@ -1,12 +1,10 @@
 package:
   name: tldr
-  dependencies:
-    - console
-    - effect
-    - prelude
+  dependencies: []
   test:
+    dependencies:
+      - prelude
     main: Test.Main
-    dependencies: []
 workspace:
   packageSet:
     registry: 56.4.0

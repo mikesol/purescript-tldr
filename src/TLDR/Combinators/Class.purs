@@ -2,7 +2,6 @@ module TLDR.Combinators.Class where
 
 import TLDR.Matchers
 
-import Prelude (Unit)
 import Prim.Symbol as S
 import Prim.TypeError (class Fail, Above, Beside, Doc, Quote, Text)
 import TLDR.Combinators (Const, IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ModifyStateBeforeOnConstant, ParseAndThenIgnore)
@@ -12,6 +11,8 @@ import TLDR.Matchers.Class as MatchClass
 import TLDR.Matchers.Show (class ShowMatch)
 import TLDR.Result (Failure, SingleFailure, Success)
 import Type.Proxy (Proxy)
+
+data Unit
 
 data RCPair :: Type -> Type -> Type
 data RCPair token combinator

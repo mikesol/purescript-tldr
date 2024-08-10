@@ -2,14 +2,10 @@ workspace:
   packages:
     tldr:
       path: ./
-      dependencies:
-        - console
-        - effect
+      dependencies: []
+      test_dependencies:
         - prelude
-      test_dependencies: []
       build_plan:
-        - console
-        - effect
         - prelude
   package_set:
     address:
@@ -517,19 +513,6 @@ workspace:
       zipperarray: 2.0.0
   extra_packages: {}
 packages:
-  console:
-    type: registry
-    version: 6.1.0
-    integrity: sha256-CxmAzjgyuGDmt9FZW51VhV6rBPwR6o0YeKUzA9rSzcM=
-    dependencies:
-      - effect
-      - prelude
-  effect:
-    type: registry
-    version: 4.0.0
-    integrity: sha256-eBtZu+HZcMa5HilvI6kaDyVX3ji8p0W9MGKy2K4T6+M=
-    dependencies:
-      - prelude
   prelude:
     type: registry
     version: 6.0.1
