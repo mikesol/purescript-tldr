@@ -3,6 +3,7 @@ module TLDR.Combinators.Class where
 import TLDR.Matchers
 
 import Prelude (Unit)
+import Prim.Symbol as S
 import Prim.TypeError (class Fail, Above, Beside, Doc, Quote, Text)
 import TLDR.Combinators (Const, IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ModifyStateBeforeOnConstant, ParseAndThenIgnore)
 import TLDR.Combinators as C
@@ -22,7 +23,7 @@ instance InternalFormat sym (Text t) (Beside (Text sym) (Text t))
 instance InternalFormat sym (Quote q) (Beside (Text sym) (Quote q))
 -- reset because we append
 instance (InternalFormat "" a a', InternalFormat "" b b') => InternalFormat sym (Beside a b) (Beside (Text sym) (Beside a' b'))
-instance (InternalFormat " " a a', InternalFormat " " b b') => InternalFormat sym (Above a b) (Above a' b')
+instance (S.Append " " sym sym', InternalFormat sym' a a', InternalFormat sym' b b') => InternalFormat sym (Above a b) (Above a' b')
 
 class Format :: Type -> Type -> Constraint
 class Format i o | i -> o
@@ -498,3 +499,9 @@ else instance (ParseRC L.Nil sym (f a b c d) stateI res' stateO, Format res' res
 else instance (ParseRC L.Nil sym (f a b c) stateI res' stateO, Format res' res) => Parse sym (f a b c) stateI res stateO
 else instance (ParseRC L.Nil sym (f a b) stateI res' stateO, Format res' res) => Parse sym (f a b) stateI res stateO
 else instance (ParseRC L.Nil sym (f a) stateI res' stateO, Format res' res) => Parse sym (f a) stateI res stateO
+
+class FailOnFail :: Type -> Constraint
+class FailOnFail res
+
+instance Fail fail => FailOnFail (Failure fail)
+instance FailOnFail (Success a b)

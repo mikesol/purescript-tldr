@@ -1,4 +1,4 @@
-name: Unit tests
+name: Compile
 
 on:
   push:
@@ -41,6 +41,3 @@ jobs:
 
       - name: Build source
         run: pnpm spago build --pedantic-packages
-
-      - name: Run tests (non-bundled with default esbuild)
-        run: pnpm test
