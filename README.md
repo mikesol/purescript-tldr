@@ -16,7 +16,7 @@ Let's examine how `purescript-tldr` works by creating a parser for a subset of J
 
 ### Data types
 
-To do this, we'll first create `data` types that our data will parse to. For example, `1` and `42` will parse to `MyInt (Proxy "1")` and `MyInt (Proxy "42")`.
+We'll first create `data` types that our data will parse to. For example, `1` and `42` will parse to `MyInt (Proxy "1")` and `MyInt (Proxy "42")`.
 
 ```purescript
 data MyInt a
