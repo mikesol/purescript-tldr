@@ -3,7 +3,7 @@ module Test.Parser where
 import Prelude
 
 import Prim.TypeError (Text)
-import TLDR.Combinators (IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ModifyStateBeforeOnConstant, ParseAndThenIgnore)
+import TLDR.Combinators (IgnoreAndThenParse, ModifyStateAfterSuccessOnConstant, ModifyStateAfterSuccessWithResult, ParseAndThenIgnore)
 import TLDR.Combinators as C
 import TLDR.Combinators.Class (class ModifyState, class Parse, class ShowParser, SP1, SP2, SP4)
 import TLDR.List (Cons, Nil)
@@ -194,23 +194,6 @@ data MyConst0
 
 instance ModifyState MyConst0 MyState0 MyState1
 
-testMatchModifyStateBeforeOnConstantSuccess :: forall @toParse @h @t. Parse toParse (FooBar (ModifyStateBeforeOnConstant MyConst0 (MatchAZ)) (Match09)) MyState0 (Success h t) MyState1 => Unit
-testMatchModifyStateBeforeOnConstantSuccess = unit
-
-testMatchModifyStateBeforeOnConstantFailure
-  :: forall @toParse
-   . Parse toParse (FooBar (ModifyStateBeforeOnConstant MyConst0 (MatchAZ)) (Match09)) MyState0
-       ( Failure _
-       )
-       MyState0
-  => Unit
-testMatchModifyStateBeforeOnConstantFailure = unit
-
-testMatchModifyStateBeforeOnConstantSuccess0 = testMatchModifyStateBeforeOnConstantSuccess @"F1a" @(FooBar (Proxy "F") (Proxy "1")) @"a" :: Unit
-
--- this will fail to compile, as it should
--- testMatchModifyStateBeforeOnConstantFailure0 = testMatchModifyStateBeforeOnConstantFailure @"q1a" :: Unit
-
 --
 testMatchModifyStateAfterSuccessOnConstantSuccess :: forall @toParse @h @t. Parse toParse (FooBar (ModifyStateAfterSuccessOnConstant MyConst0 (MatchAZ)) (Match09)) MyState0 (Success h t) MyState1 => Unit
 testMatchModifyStateAfterSuccessOnConstantSuccess = unit
@@ -253,10 +236,10 @@ testMatchModifyStateAfterSuccessWithResultSuccess0 = testMatchModifyStateAfterSu
 
 ---
 
-testMatchBranchOnStateSuccess :: forall @toParse @h @t. Parse toParse (FooBar (ModifyStateBeforeOnConstant MyConst0 (MatchAZ)) (C.BranchOnState (L.Cons (C.IfThen MyState1 Matchaz) L.Nil) Match09)) MyState0 (Success h t) MyState1 => Unit
+testMatchBranchOnStateSuccess :: forall @toParse @h @t. Parse toParse (FooBar (ModifyStateAfterSuccessOnConstant MyConst0 (MatchAZ)) (C.BranchOnState (L.Cons (C.IfThen MyState1 Matchaz) L.Nil) Match09)) MyState0 (Success h t) MyState1 => Unit
 testMatchBranchOnStateSuccess = unit
 
-testMatchBranchOnStateFailure :: forall @toParse. Parse toParse (FooBar (ModifyStateBeforeOnConstant MyConst0 (MatchAZ)) (C.BranchOnState (L.Cons (C.IfThen MyState1 Matchaz) L.Nil) Match09)) MyState0 (Failure _) MyState1 => Unit
+testMatchBranchOnStateFailure :: forall @toParse. Parse toParse (FooBar (ModifyStateAfterSuccessOnConstant MyConst0 (MatchAZ)) (C.BranchOnState (L.Cons (C.IfThen MyState1 Matchaz) L.Nil) Match09)) MyState0 (Failure _) MyState1 => Unit
 testMatchBranchOnStateFailure = unit
 
 testMatchBranchOnStateSuccess0 = testMatchBranchOnStateSuccess @"Fq" @(FooBar (Proxy "F") (Proxy "q")) @"" :: Unit

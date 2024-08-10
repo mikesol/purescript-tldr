@@ -6,14 +6,11 @@ import TLDR.Matchers (Noop)
 data IfThen :: Type -> Type -> Type
 data IfThen condition action
 
-data ModifyStateBeforeOnConstant :: Type -> Type -> Type
-data ModifyStateBeforeOnConstant constant cont
-
 data ModifyStateAfterSuccessOnConstant :: Type -> Type -> Type
 data ModifyStateAfterSuccessOnConstant constant cont
 
 data ModifyStateAfterSuccessWithResult :: (Type -> Type) -> Type -> Type
-data ModifyStateAfterSuccessWithResult f cont
+data ModifyStateAfterSuccessWithResult functor cont
 
 data BranchOnState :: Type -> Type -> Type
 data BranchOnState branches otherwise
