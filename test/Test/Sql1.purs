@@ -78,8 +78,15 @@ mytables0' :: forall a. Parse """
     CREATE TABLE foo (id int, lastname text, firstname text);
     CREATE TABLE bar (id int, time_created int, nickname text);
     CREATE TABLE baz (id int, username text);
-    CREATE TABLE qux (id int, user1 text, user2 text);
+    CREATE TABLE qux (id int, user1 text, user2 text, user3 text, user4 text, user5 text);
     CREATE TABLE goo (id int, last_updated int);
+
+    CREATE TABLE fooA (id int, lastname text, firstname text);
+    CREATE TABLE barA (id int, time_created int, nickname text);
+    CREATE TABLE bazA (id int, username text);
+    CREATE TABLE quxA (id int, user1 text, user2 text);
+    CREATE TABLE gooA (id int, last_updated int);
+
     """ TableDefsP Unit a Unit => Unit -> Proxy a
 mytables0' _ = Proxy
 
