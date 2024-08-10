@@ -12,98 +12,160 @@ This library aims to bridge that gap, providing the copy-and-paste-ability of LL
 
 ## How it works
 
-Let's say you do
+Let's write a parser for a subset of JSON, called MySON.
+
+The full example is below.
 
 ```purescript
-data FooBarBazQux :: Type -> Type -> Type -> Type -> Type
-data FooBarBazQux foo bar baz qux
+module Test.Readme where
 
-instance
-  ShowParser (SP4 "FooBarBazQux" foo bar baz qux) doc =>
-  ShowParser (FooBarBazQux foo bar baz qux) doc
+import Prelude
 
-data FooBarBazQux :: Type -> Type -> Type -> Type -> Type
-data FooBarBazQux foo bar baz qux
+import Prim.TypeError (Text)
+import TLDR.Combinators (ParseAndThenIgnore)
+import TLDR.Combinators as C
+import TLDR.Combinators.Class (class FailOnFail, class Parse, class ShowParser, SP1, SP2, SP4)
+import TLDR.Matchers as M
+import TLDR.Sugar (Bracket, DQ, L4, L5, WS, WSM, DQM)
+import Type.Function (type ($))
+import Type.Proxy (Proxy(..))
 
-instance
-  ShowParser (SP4 "FooBarBazQux" foo bar baz qux) doc =>
-  ShowParser (FooBarBazQux foo bar baz qux) doc
+data MySONFix
 
-x
-  :: forall @a
-   . Parse "hello world"
-       ( FooBarBazQux
-           (Match3 Matchaz)
-           (Match2 Matchaz)
-           (IgnoreAndThenParse (Some MatchWhitespace) (Match2 Matchaz))
-           (Match3 Matchaz)
-       )
+instance ShowParser MySONFix (Text "MySONFix")
+
+data MyInt a
+
+instance ShowParser (SP1 "MyInt" a) doc => ShowParser (MyInt a) doc
+
+data MyString a
+
+instance ShowParser (SP1 "MyString" a) doc => ShowParser (MyString a) doc
+
+data MyBoolean a
+
+instance ShowParser (SP1 "MyBoolean" a) doc => ShowParser (MyBoolean a) doc
+
+data MyArray a
+
+instance ShowParser (SP1 "MyArray" a) doc => ShowParser (MyArray a) doc
+
+data MyObjectEntry k v
+
+instance ShowParser (SP2 "MyObjectEntry" a b) doc => ShowParser (MyObjectEntry a b) doc
+
+data MyObject a
+
+instance ShowParser (SP1 "MyObject" a) doc => ShowParser (MyObject a) doc
+
+type ParseInt = WS (MyInt (M.Some M.Match09))
+
+type ParseString = WS (DQ (MyString (M.Some M.MatchAlphanumeric)))
+
+type ParseBoolean = WS
+  $ MyBoolean
+  $ M.Or (L4 "t" "r" "u" "e") (L5 "f" "a" "l" "s" "e")
+
+type ParseArray a = WS
+  $ Bracket (M.Literal "[")
+      (MyArray (C.SepBy a (WSM (M.Literal ","))))
+      (M.Literal "]")
+
+type ObjectPair (a :: Type) = WS
+  $ MyObjectEntry
+      ( ParseAndThenIgnore
+          (WS (DQ (M.Some M.MatchAlphanumeric)))
+          (M.Literal ":")
+      )
+      a
+
+type ParseObject a = WS
+  $ Bracket (M.Literal "{")
+      (MyObject (C.SepBy (ObjectPair a) (WSM (M.Literal ","))))
+      (M.Literal "}")
+
+type MySON = WS
+  $ C.Fix MySONFix
+  $ C.Or ParseInt
+  $ C.Or ParseString
+  $ C.Or ParseBoolean
+  $ C.Or (ParseArray MySONFix) (ParseObject MySONFix)
+
+myson0' :: forall a. Parse "1" MySON Unit a Unit => Unit -> Proxy a
+myson0' _ = Proxy
+
+myson0 = myson0' unit
+
+myson1'
+  :: forall a
+   . Parse
+       """[1,"true",false]"""
+       MySON
        Unit
        a
        Unit
-  => Unit -> Unit
-x _ = unit
+  => Unit
+  -> Proxy a
+myson1' _ = Proxy
 
-y _ = x @(Failure _)
+myson1 = myson1' unit
+
+myson2'
+  :: forall a
+   . Parse
+       """
+  {"username":"mikesol", "pw":1234, "tags":["bored", "tired"] }
+  """
+       MySON
+       Unit
+       a
+       Unit
+  => Unit
+  -> Proxy a
+myson2' _ = Proxy
+
+myson2 = myson2' unit
 ```
 
-You'll get the following error:
+Now, when we hover over the ide for the definitions of `myson0`, `myson1`, and `myson2`, we get the following:
 
 ```bash
-  Could not match type
+Proxy (Success (MyInt (Proxy "1")) "")
 
-    Success (FooBarBazQux (Proxy "hel") (Proxy "lo") (Proxy "wo") (Proxy "rld"))
+Proxy (Success (MyArray (Cons (MyInt (Proxy "1")) (Cons (MyString (Proxy "true")) (Cons (MyBoolean (Proxy "false")) Nil)))) "")
 
-  with type
-
-    Failure
+Proxy (Success (MyObject (Cons (MyObjectEntry (Proxy "username") (MyString (Proxy "mikesol"))) (Cons (MyObjectEntry (Proxy "pw") (MyInt (Proxy "1234"))) (Cons (MyObjectEntry (Proxy "tags") (MyArray (Cons (MyString (Proxy "bored")) (Cons (MyString (Proxy "tired")) Nil)))) Nil)))) "")
 ```
 
-The library generates success responses for consumption in downstream constraints.
+From there, you can consume your typelevel ADT in downstream constraints.
 
-## Error messages
+## Errors
 
-The library prints formatted error messages showing exactly where the parsing went wrong. You can print this with the `FailOnFail` class.
+When parsing fails, we can reasonably nice error messages using the `FailOnFail` class. Otherwise, the type variable `a` can carry the failure forward for downstream processing.
 
-The parsing would likely fail anyway because of a failed match against `Success` in your downstream constraint, but by using `FailOnFail`, you get the nice error message.
+Take for example:
 
 ```purescript
-a
-  :: forall @a
-   . Parse "hell0 world"
-       ( FooBarBazQux
-           (Match3 Matchaz)
-           (Match2 Matchaz)
-           (IgnoreAndThenParse (Some MatchWhitespace) (Match2 Matchaz))
-           (Match3 Matchaz)
-       )
+mysonFail'
+  :: forall a
+   . Parse
+       """{1,"true",false}"""
+       MySON
        Unit
        a
        Unit
   => FailOnFail a
-  => Unit -> Unit
-a _ = unit
+  => Unit
+  -> Proxy a
+mysonFail' _ = Proxy
 
-b _ = a
+mysonFail = mysonFail' unit
 ```
 
-This yields:
+You get:
 
 ```bash
   Custom error:
 
-     FooBarBazQux
-      hel
-       Failed to match on matcher And a-za-z
-         IgnoreAndThenParse
-          Some Whitespace
-          Two a-z
-        Three a-z
-
-
-while solving type class constraint
-
-  TLDR.Combinators.Class.FailOnFail t0
+    Could not match } against 1
 ```
-
-We can see that it parses `hel` but then fails on the second matcher because of the `0` and does not get to the third.

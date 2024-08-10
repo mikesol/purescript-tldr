@@ -5,8 +5,11 @@ workspace:
       dependencies: []
       test_dependencies:
         - prelude
+        - typelevel-prelude
       build_plan:
         - prelude
+        - type-equality
+        - typelevel-prelude
   package_set:
     address:
       registry: 56.4.0
@@ -518,3 +521,15 @@ packages:
     version: 6.0.1
     integrity: sha256-o8p6SLYmVPqzXZhQFd2hGAWEwBoXl1swxLG/scpJ0V0=
     dependencies: []
+  type-equality:
+    type: registry
+    version: 4.0.1
+    integrity: sha256-Hs9D6Y71zFi/b+qu5NSbuadUQXe5iv5iWx0226vOHUw=
+    dependencies: []
+  typelevel-prelude:
+    type: registry
+    version: 7.0.0
+    integrity: sha256-uFF2ph+vHcQpfPuPf2a3ukJDFmLhApmkpTMviHIWgJM=
+    dependencies:
+      - prelude
+      - type-equality

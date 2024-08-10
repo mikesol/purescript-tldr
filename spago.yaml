@@ -1,9 +1,10 @@
 package:
   name: tldr
-  dependencies: []
+  dependencies:
+      - prelude
   test:
     dependencies:
-      - prelude
+      - typelevel-prelude
     main: Test.Main
 workspace:
   packageSet:

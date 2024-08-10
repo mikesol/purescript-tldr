@@ -82,7 +82,8 @@ instance ManyLoop i (Failure ignore) match (Success "" i)
 instance Match i Matchers.Noop (Success "" i)
 else instance
   Match "" Matchers.EOF (Success "" "")
-
+else instance
+  Match "" (Matchers.Many anything) (Success "" "")
 else instance
   ShowMatch m s =>
   Match "" m (Failure (SingleFailure (Beside (Text "Cannot match empty string against a matcher") (Text s))))

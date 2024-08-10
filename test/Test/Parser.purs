@@ -10,7 +10,6 @@ import TLDR.List (Cons, Nil)
 import TLDR.List as L
 import TLDR.Matchers (Literal, Match09, Match3, MatchAZ, MatchWhitespace, Matchaz, Or, Some)
 import TLDR.Matchers as M
-import TLDR.Matchers.Class (class MatchLiteral)
 import TLDR.Result (Failure, Success)
 import Type.Proxy (Proxy)
 
