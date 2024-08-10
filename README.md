@@ -112,7 +112,7 @@ type ParseObject a = WS
 
 type MySON = WS
   $ C.Fix
-      ( "mySONFix" ::
+      ( mySONFix ::
           C.Or ParseInt
             $ C.Or ParseString
             $ C.Or ParseBoolean
