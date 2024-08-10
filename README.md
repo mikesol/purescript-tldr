@@ -302,7 +302,7 @@ There are three state-management combinators for keeping and using an internal s
 
 There are examples of all four of these in the [tests](./test/Test/Parser.purs).
 
-In general, state management should be considered an advanced feature. Most often, you can do it in a second step. For example, in XML parsing, you can use state management to determine if open tags are closed. But you can also do this in a second step after successfully parsing to a data type. While the latter is slower, it's easier to read and implement.
+In general, state management should be considered an advanced feature. Most often, it's not needed, and you can do all stateful tasks it in a second step. For example, in XML parsing, you can use state management to determine if open tags are closed. But you can also do this in a second step after successfully parsing to a data type. While the latter is slower, it's easier to read and implement.
 
 #### Gotchyas
 
