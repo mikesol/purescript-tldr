@@ -290,6 +290,8 @@ Fixed points are essential in parsing because they allow you to parse arbitraril
 
 The way `Fix self a` works is that you define a type for `self`. In the MySON example, it's `MySONFix`. Then, in `a`, you refer to `MySONFix` whenever you want to parse `a`. This is how objects and arrays are expressed in the `MySON` example.
 
+> Mutual recursion is currently not implemented, but it'd be pretty sweet if it were. PRs are welcome!
+
 #### State management
 
 There are three state-management combinators for keeping and using an internal state.
