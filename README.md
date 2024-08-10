@@ -38,7 +38,7 @@ After defining our data types, we match them against whatever we want to parse. 
 type ParseInt = WS (MyInt (M.Some M.Match09))
 ```
 
-We'll go over all of the matchers and combinators in the library later.
+We'll go over all of the matchers and combinators in the [API](#api) section.
 
 ### Full example
 
