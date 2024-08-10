@@ -288,7 +288,7 @@ Here are the combinators. `Fix` is a mind-melt, so there'll be a whole section o
 
 #### Fix
 
-Fixed points are essential in parsing because they allow you to parse arbitrarily nested structures. The MySON example above uses one, and most parsing tasks eventually requires a fixed point.
+Fixed points are essential in parsing because they allow you to parse arbitrarily nested structures. The MySON example above uses one, and most parsing tasks eventually require a fixed point.
 
 The way `Fix selfs` works is that you define a row of types for `selfs`. In the MySON example, it's a row with entry `mySONFix`. Then, in `a`, you refer to `Proxy "mySONFix"` whenever you want to parse `a`. This is how objects and arrays are expressed in the `MySON` example.
 
