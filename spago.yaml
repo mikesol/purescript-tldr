@@ -1,11 +1,17 @@
 package:
   name: tldr
   dependencies:
-      - prelude
+    - prelude: ">=6.0.1 <7.0.0"
   test:
     dependencies:
       - typelevel-prelude
     main: Test.Main
+  publish:
+    version: 0.0.0
+    license: BSD-3-Clause
+    location:
+      githubOwner: mikesol
+      githubRepo: purescript-tldr
 workspace:
   packageSet:
     registry: 56.4.0

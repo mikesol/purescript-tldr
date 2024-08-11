@@ -3,7 +3,7 @@ workspace:
     tldr:
       path: ./
       dependencies:
-        - prelude
+        - prelude: ">=6.0.1 <7.0.0"
       test_dependencies:
         - typelevel-prelude
       build_plan:
