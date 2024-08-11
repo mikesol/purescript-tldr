@@ -57,7 +57,7 @@ infixr 2 type Or as |||
 data And :: Type -> Type -> Type
 data And left right
 
-infixr 2 type Or as &&&
+infixr 2 type And as &&&
 
 data Noop
 
