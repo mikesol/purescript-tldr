@@ -388,7 +388,7 @@ else instance (MatchClass.Match sym (Match9 m) res', RecastSuccessToProxy res' r
 else instance (MatchClass.Match sym ignore res', ContinueIfMatch rc res' parse stateI res stateO) => ParseRC rc sym (C.IgnoreAndThenParse ignore parse) stateI res stateO
 else instance (ParseRC rc sym parse stateI res' stateO', ContinueIfParse rc res' ignore stateO' res stateO) => ParseRC rc sym (C.ParseAndThenIgnore parse ignore) stateI res stateO
 else instance (ParseRC rc sym left stateI res' stateO', UseIfMatch rc sym res' right stateI stateO' res stateO) => ParseRC rc sym (C.Or left right) stateI res stateO
-else instance ParseRC rc sym (C.Const val) stateI (Success val sym) stateO
+else instance ParseRC rc sym (C.Const val) stateI (Success val sym) stateI
 else instance (Row.Cons token combinator rc' rc, ParseRC rc sym combinator stateI res stateO) => ParseRC rc sym (Proxy token) stateI res stateO
 else instance
   ( ParseRC rc sym cont stateI res stateO'
