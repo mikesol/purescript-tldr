@@ -192,7 +192,7 @@ data MyState0
 data MyState1
 data MyConst0
 
-instance ModifyState MyConst0 MyState0 MyState1
+instance ModifyState sym MyConst0 MyState0 MyState1
 
 --
 testMatchModifyStateAfterSuccessOnConstantSuccess :: forall @toParse @h @t. Parse toParse (FooBar (ModifyStateAfterSuccessOnConstant MyConst0 (MatchAZ)) (Match09)) MyState0 (Success h t) MyState1 => Unit
@@ -220,7 +220,7 @@ data MyFunctor0 a
 data MyFunctor1 :: Type -> Type
 data MyFunctor1 a
 
-instance ModifyState (MyFunctor0 (Proxy a)) MyState0 (MyFunctor1 (Proxy a))
+instance ModifyState sym (MyFunctor0 (Proxy a)) MyState0 (MyFunctor1 (Proxy a))
 
 testMatchModifyStateAfterSuccessWithResultSuccess :: forall @toParse @r @h @t. Parse toParse (FooBar (ModifyStateAfterSuccessWithResult MyFunctor0 (MatchAZ)) (Match09)) MyState0 (Success h t) (MyFunctor1 r) => Unit
 testMatchModifyStateAfterSuccessWithResultSuccess = unit
