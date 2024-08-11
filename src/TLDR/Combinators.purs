@@ -20,11 +20,17 @@ data BranchOnState branches otherwise
 data Or :: Type -> Type -> Type
 data Or left right
 
+infixr 2 type Or as ||
+
 data IgnoreAndThenParse :: Type -> Type -> Type
 data IgnoreAndThenParse ignore parse
 
+infixl 4 type IgnoreAndThenParse as $>
+
 data ParseAndThenIgnore :: Type -> Type -> Type
 data ParseAndThenIgnore parse ignore
+
+infixl 4 type ParseAndThenIgnore as <$
 
 data Some :: Type -> Type
 data Some combinator

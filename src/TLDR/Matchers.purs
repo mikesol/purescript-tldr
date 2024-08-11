@@ -52,8 +52,12 @@ data Except disallowed allowed
 data Or :: Type -> Type -> Type
 data Or left right
 
+infixr 2 type Or as |||
+
 data And :: Type -> Type -> Type
 data And left right
+
+infixr 2 type Or as &&&
 
 data Noop
 
