@@ -11,10 +11,6 @@ import TLDR.Sugar (Bracket, DQ, L4, L5, WS, WSM)
 import Type.Function (type ($))
 import Type.Proxy (Proxy(..))
 
-data MySONFix
-
-instance ShowParser MySONFix (Text "MySONFix")
-
 data MyInt a
 
 instance ShowParser (SP1 "MyInt" a) doc => ShowParser (MyInt a) doc
